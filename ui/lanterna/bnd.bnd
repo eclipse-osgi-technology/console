@@ -1,0 +1,12 @@
+-includeresource: \
+ @lanterna-3.1.3.jar!/!META-INF/maven/*
+
+Export-Package: \
+ com.googlecode.lanterna*
+
+Import-Package:  \
+ *
+
+
+# !com.googlecode.lanterna.terminal.swing.*,\
+# !com.googlecode.lanterna.terminal.awt.*,\

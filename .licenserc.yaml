@@ -53,5 +53,6 @@ header:
     - '**/bnd.bnd'
     - '**/motd'
     - 'extensions/hash.checker/src/test/resources/**'
+    - 'ui/lanterna/src/main/resources/META-INF/LICENSE_LGPL_V3'
 
   comment: always
