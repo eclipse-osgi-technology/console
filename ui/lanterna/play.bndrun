@@ -1,0 +1,15 @@
+-runtrace: true
+-runrequires: \
+	bnd.identity;id='org.eclipse.osgi-technology.console.ui.${project.artifactId}',\
+	bnd.identity;id='org.apache.felix.scr'
+
+-runfw: org.apache.felix.framework
+-runee: JavaSE-17
+
+
+-runbundles: \
+	org.eclipse.osgi-technology.console.ui.lanterna;version='[0.0.1,0.0.2)',\
+	org.apache.felix.scr;version='[2.2.2,2.2.3)',\
+	org.osgi.service.component;version='[1.5.1,1.5.2)',\
+	org.osgi.util.function;version='[1.0.0,1.0.1)',\
+	org.osgi.util.promise;version='[1.0.0,1.0.1)'

@@ -1,12 +1,16 @@
 -includeresource: \
- @lanterna-3.1.3.jar!/!META-INF/maven/*
+ @lanterna-3.1.3.jar!/!(META-INF/maven/*|com/googlecode/lanterna/terminal/ansi/*|com/googlecode/lanterna/terminal/swing/*|com/googlecode/lanterna/terminal/DefaultTerminalFactory.class)
 
-Export-Package: \
- com.googlecode.lanterna*
+-exportcontents: \
+ com.googlecode.lanterna.*
 
 Import-Package:  \
  *
 
+
+# !com.googlecode.lanterna.terminal.ansi.*,\
+# !com.googlecode.lanterna.terminal.swing.*,\
+ 
 
 # !com.googlecode.lanterna.terminal.swing.*,\
 # !com.googlecode.lanterna.terminal.awt.*,\
