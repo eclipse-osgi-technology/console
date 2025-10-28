@@ -25,6 +25,7 @@
   <packaging>pom</packaging>
   <modules>
     <module>lanterna</module>
+    <module>jline</module>
     <module>demo</module>
   </modules>
 </project>

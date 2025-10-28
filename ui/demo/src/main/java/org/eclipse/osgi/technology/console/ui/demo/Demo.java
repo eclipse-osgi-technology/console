@@ -1,463 +1,362 @@
 /**
  * Copyright (c) 2025 Contributors to the Eclipse Foundation
- * All rights reserved. 
- * 
+ * All rights reserved.
+ *
  * This program and the accompanying materials are made
  * available under the terms of the Eclipse Public License 2.0
  * which is available at https://www.eclipse.org/legal/epl-2.0/
  *
  * SPDX-License-Identifier: EPL-2.0
- * 
+ *
  * Contributors:
  *     Stefan Bischof - initial
  */
 package org.eclipse.osgi.technology.console.ui.demo;
 
 import java.io.IOException;
-import java.io.PrintWriter;
-import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
-import java.util.concurrent.TimeUnit;
 
-import org.jline.jansi.Ansi;
 import org.jline.jansi.AnsiConsole;
-import org.jline.terminal.Attributes;
-import org.jline.terminal.Size;
-import org.jline.terminal.Terminal;
-import org.jline.terminal.TerminalBuilder;
-import org.jline.terminal.impl.jni.JniTerminalProvider;
-import org.jline.terminal.spi.SystemStream;
-import org.osgi.framework.BundleContext;
 import org.osgi.service.component.annotations.Activate;
 import org.osgi.service.component.annotations.Component;
 import org.osgi.service.component.annotations.Deactivate;
+import org.osgi.service.component.annotations.Reference;
 import org.osgi.service.component.annotations.ServiceScope;
+
+import com.googlecode.lanterna.TerminalPosition;
+import com.googlecode.lanterna.gui2.ActionListBox;
+import com.googlecode.lanterna.gui2.BasicWindow;
+import com.googlecode.lanterna.gui2.Borders;
+import com.googlecode.lanterna.gui2.Button;
+import com.googlecode.lanterna.gui2.Direction;
+import com.googlecode.lanterna.gui2.EmptySpace;
+import com.googlecode.lanterna.gui2.Label;
+import com.googlecode.lanterna.gui2.LinearLayout;
+import com.googlecode.lanterna.gui2.MultiWindowTextGUI;
+import com.googlecode.lanterna.gui2.Panel;
+import com.googlecode.lanterna.gui2.Separator;
+import com.googlecode.lanterna.gui2.TextGUI;
+import com.googlecode.lanterna.gui2.TextGUI.Listener;
+import com.googlecode.lanterna.input.KeyStroke;
+import com.googlecode.lanterna.input.KeyType;
+import com.googlecode.lanterna.screen.Screen;
+import com.googlecode.lanterna.screen.TerminalScreen;
 
 @Component(scope = ServiceScope.SINGLETON, immediate = true)
 public final class Demo {
 
-    private Terminal terminal;
-    private PrintWriter writer;
-    private volatile boolean running = true;
+	private com.googlecode.lanterna.terminal.Terminal terminal;
 
-    @Activate
-    public Demo(BundleContext context) throws InterruptedException, IOException {
-        System.out.println("=== JLine Terminal Demo Starting ===");
-        
-        // Initialize Jansi for ANSI support
-        AnsiConsole.systemInstall();
-        
-        runComprehensiveDemo();
-    }
+	@Activate
+	public Demo(@Reference com.googlecode.lanterna.terminal.Terminal terminal)
+			throws InterruptedException, IOException {
 
-    private void runComprehensiveDemo() throws IOException, InterruptedException {
-        
-        
-        
-        JniTerminalProvider jniProvider = new JniTerminalProvider();
-//        jniProvider.current(SystemStream.Input);
-        
-        
-        // Check if JNI native library is available
-        Terminal jniTerminal = jniProvider.sysTerminal(
-            "TestJNI",                              // name
-            "xterm-256color",                       // type  
-            false,                                  // ansiPassThrough
-            java.nio.charset.StandardCharsets.UTF_8, // encoding
-            java.nio.charset.StandardCharsets.UTF_8, // stdinEncoding
-            java.nio.charset.StandardCharsets.UTF_8, // stdoutEncoding  
-//            java.nio.charset.StandardCharsets.UTF_8, // stderrEncoding
-            true,                                   // nativeSignals
-            Terminal.SignalHandler.SIG_DFL,         // signalHandler
-            false,                                  // paused
-            SystemStream.Output                     // systemStream
-        );
-        
-        
-        System.out.println("\n1. Testing Terminal Providers...");
-        testTerminalProviders();
-        
-        System.out.println("\n2. Creating Main Terminal...");
-        createMainTerminal();
-        
-        System.out.println("\n3. Testing Terminal Capabilities...");
-        testTerminalCapabilities();
-        
-        System.out.println("\n4. Testing Terminal Attributes...");
-        testTerminalAttributes();
-        
-        System.out.println("\n5. Testing Colors and ANSI Support...");
-        testColorsAndAnsi();
-        
-        System.out.println("\n6. Testing Cursor Operations...");
-        testCursorOperations();
-        
-        System.out.println("\n7. Testing Input/Output...");
-        testInputOutput();
-        
-        System.out.println("\n8. Testing Screen Management...");
-        testScreenManagement();
-        
-        System.out.println("\n9. Testing Signal Handling...");
-        testSignalHandling();
-        
-        System.out.println("\n10. Performance Tests...");
-        performanceTests();
-        
-        System.out.println("\nDemo completed successfully!");
-        
-        // Keep demo running for interaction
-        if (terminal != null && !terminal.getType().equals("dumb")) {
-            interactiveMode();
-        }
-    }
+		this.terminal = terminal;
+		runComprehensiveDemo();
+	}
 
-    private void testTerminalProviders() {
-        System.out.println("Testing different terminal providers:");
-        
-        String[] providers = {"system", "jni", "jansi", "exec", "dumb"};
-        
-        for (String provider : providers) {
-            try {
-                Terminal testTerminal = TerminalBuilder.builder()
-                    .provider(provider)
-                    .build();
-                    
-                System.out.println("  ✓ " + provider + ": " + testTerminal.getType() + 
-                                   " (" + testTerminal.getClass().getSimpleName() + ")");
-                testTerminal.close();
-                
-            } catch (Exception e) {
-                System.out.println("  ✗ " + provider + ": " + e.getMessage());
-            }
-        }
-    }
+	private void runComprehensiveDemo() throws IOException, InterruptedException {
 
-    private void createMainTerminal() throws IOException {
-        terminal = TerminalBuilder.builder()
-            .name("JLineDemo")
-            .system(true)
-            .jansi(true)
-            .color(true)
-            .encoding(java.nio.charset.StandardCharsets.UTF_8)
-            .nativeSignals(true)
-            .signalHandler(this::handleSignal)
-            .build();
-            
-        writer = terminal.writer();
-        
-        System.out.println("Main terminal created:");
-        System.out.println("  Type: " + terminal.getType());
-        System.out.println("  Name: " + terminal.getName());
-        System.out.println("  Size: " + terminal.getSize());
-        System.out.println("  Encoding: " + terminal.encoding());
-    }
+		Screen screen = new TerminalScreen(terminal);
 
-    private void testTerminalCapabilities() throws IOException {
-        System.out.println("Terminal capabilities:");
-        
-        // Test basic properties
-        Size size = terminal.getSize();
-        System.out.println("  Terminal size: " + size.getColumns() + "x" + size.getRows());
-        System.out.println("  Can resize: " + (size.getColumns() > 0));
-        System.out.println("  Terminal type: " + terminal.getType());
-        System.out.println("  Terminal name: " + terminal.getName());
-        System.out.println("  Encoding: " + terminal.encoding());
-        
-        // Test basic features by terminal type
-        String termType = terminal.getType();
-        if (termType.contains("ansi") || termType.contains("xterm") || termType.contains("color")) {
-            System.out.println("  Likely supports: Colors, Cursor positioning, ANSI sequences");
-        } else if (termType.equals("dumb")) {
-            System.out.println("  Limited support: Basic text only, no colors or cursor control");
-        } else {
-            System.out.println("  Unknown terminal capabilities for type: " + termType);
-        }
-    }
+		screen.startScreen();
 
-    private void testTerminalAttributes() throws IOException {
-        System.out.println("Testing terminal attributes:");
-        
-        // Get current attributes
-        Attributes attrs = terminal.getAttributes();
-        System.out.println("  Current attributes: " + attrs);
-        
-        // Test canonical mode
-        System.out.println("  Canonical mode: " + attrs.getLocalFlag(Attributes.LocalFlag.ICANON));
-        System.out.println("  Echo mode: " + attrs.getLocalFlag(Attributes.LocalFlag.ECHO));
-        
-        // Enter raw mode for better terminal control
-        terminal.enterRawMode();
-        System.out.println("  Entered raw mode");
-        
-        // Restore attributes
-        terminal.setAttributes(attrs);
-        System.out.println("  Restored original attributes");
-    }
+		// Add shutdown hook to clean up terminal on Ctrl+C
+		Runtime.getRuntime().addShutdownHook(new Thread(() -> {
+			try {
+				System.err.println("Shutdown hook triggered - cleaning up terminal...");
 
-    private void testColorsAndAnsi() throws IOException {
-        System.out.println("Testing colors and ANSI sequences:");
-        
-        if (writer != null) {
-            // Test basic ANSI colors
-            writer.println("\n  Basic ANSI Colors:");
-            for (Ansi.Color color : Ansi.Color.values()) {
-                writer.print(Ansi.ansi().fg(color).a("  " + color.name()).reset().a(" "));
-            }
-            writer.println();
-            
-            // Test bright colors
-            writer.println("\n  Bright ANSI Colors:");
-            for (Ansi.Color color : Ansi.Color.values()) {
-                writer.print(Ansi.ansi().fgBright(color).a("  " + color.name()).reset().a(" "));
-            }
-            writer.println();
-            
-            // Test background colors
-            writer.println("\n  Background Colors:");
-            for (Ansi.Color color : Ansi.Color.values()) {
-                writer.print(Ansi.ansi().bg(color).a("  " + color.name()).reset().a(" "));
-            }
-            writer.println();
-            
-            // Test RGB colors (if supported)
-            writer.println("\n  RGB Colors (if supported):");
-            writer.print(Ansi.ansi().fgRgb(255, 0, 0).a("  RED"));
-            writer.print(Ansi.ansi().fgRgb(0, 255, 0).a("  GREEN"));
-            writer.print(Ansi.ansi().fgRgb(0, 0, 255).a("  BLUE"));
-            writer.println(Ansi.ansi().reset());
-            
-            // Test text attributes
-            writer.println("\n  Text Attributes:");
-            writer.println(Ansi.ansi().bold().a("  Bold text").reset());
-            writer.println(Ansi.ansi().a(Ansi.Attribute.ITALIC).a("  Italic text").reset());
-            writer.println(Ansi.ansi().a(Ansi.Attribute.UNDERLINE).a("  Underlined text").reset());
-            writer.println(Ansi.ansi().a(Ansi.Attribute.STRIKETHROUGH_ON).a("  Strikethrough text").reset());
-            
-            writer.flush();
-        }
-    }
+				// Exit private mode first to disable mouse tracking
+				if (terminal != null) {
+					try {
+						terminal.exitPrivateMode();
+						System.err.println("  Private mode exited");
+					} catch (Exception e) {
+						System.err.println("  Error exiting private mode: " + e.getMessage());
+					}
+				}
 
-    private void testCursorOperations() throws IOException {
-        System.out.println("Testing cursor operations:");
-        
-        if (writer != null && !terminal.getType().equals("dumb")) {
-            Size size = terminal.getSize();
-            
-            // Save cursor position
-            writer.print(Ansi.ansi().saveCursorPosition());
-            
-            // Move cursor to different positions
-            writer.print(Ansi.ansi().cursor(5, 10).a("Position (5,10)"));
-            writer.print(Ansi.ansi().cursor(10, 5).a("Position (10,5)"));
-            writer.print(Ansi.ansi().cursor(15, 15).a("Position (15,15)"));
-            
-            // Test cursor movement
-            writer.print(Ansi.ansi().cursor(20, 1));
-            writer.print("Moving right: ");
-            for (int i = 0; i < 10; i++) {
-                writer.print(Ansi.ansi().cursorRight(1).a("*"));
-                writer.flush();
-                try { Thread.sleep(100); } catch (InterruptedException e) {}
-            }
-            
-            writer.print(Ansi.ansi().cursor(21, 1));
-            writer.print("Moving down: ");
-            for (int i = 0; i < 5; i++) {
-                writer.print(Ansi.ansi().cursorDown(1).a("*"));
-                writer.flush();
-                try { Thread.sleep(100); } catch (InterruptedException e) {}
-            }
-            
-            // Hide and show cursor using raw ANSI sequences
-            writer.print(Ansi.ansi().cursor(22, 1).a("Cursor will be hidden"));
-            writer.print("\\u001B[?25l"); // Hide cursor
-            writer.flush();
-            try { Thread.sleep(1000); } catch (InterruptedException e) {}
-            
-            writer.print("\\u001B[?25h"); // Show cursor
-            writer.print(Ansi.ansi().cursor(23, 1).a("Cursor shown again"));
-            
-            // Restore cursor position
-            writer.print(Ansi.ansi().restoreCursorPosition());
-            writer.flush();
-        }
-        
-        System.out.println("  Cursor operations completed");
-    }
+				if (screen != null) {
+					screen.clear();
+					screen.refresh();
+					screen.stopScreen();
+				}
+				if (terminal != null) {
+					terminal.close();
+				}
+			} catch (IOException e) {
+				System.err.println("Error during shutdown cleanup: " + e.getMessage());
+			}
+		}));
 
-    private void testInputOutput() throws IOException {
-        System.out.println("Testing input/output operations:");
-        
-        if (terminal != null) {
-            System.out.println("  Terminal reader available: " + (terminal.reader() != null));
-            System.out.println("  Terminal writer available: " + (terminal.writer() != null));
-            
-            // Test input availability (non-blocking)
-            try {
-                boolean inputReady = terminal.reader().ready();
-                System.out.println("  Input ready: " + inputReady);
-            } catch (Exception e) {
-                System.out.println("  Input test failed: " + e.getMessage());
-            }
-            
-            // Test output
-            if (writer != null) {
-                writer.println("  Test output line");
-                writer.flush();
-                System.out.println("  Output test completed");
-            }
-        }
-    }
+		// Use default same-thread strategy (no separate GUI thread)
+		MultiWindowTextGUI gui = new MultiWindowTextGUI(screen);
 
-    private void testScreenManagement() throws IOException {
-        System.out.println("Testing screen management:");
-        
-        if (writer != null && !terminal.getType().equals("dumb")) {
-            // Switch to alternate screen
-            writer.print(Ansi.ansi().a("\\u001B[?1049h"));
-            writer.flush();
-            
-            // Clear alternate screen
-            writer.print(Ansi.ansi().eraseScreen().cursor(1, 1));
-            writer.println("=== ALTERNATE SCREEN ===");
-            writer.println("This is displayed on the alternate screen buffer");
-            writer.println("Original screen content is preserved");
-            writer.flush();
-            
-            try { Thread.sleep(2000); } catch (InterruptedException e) {}
-            
-            // Switch back to main screen
-            writer.print(Ansi.ansi().a("\\u001B[?1049l"));
-            writer.flush();
-            
-            System.out.println("  Screen switching completed");
-        } else {
-            System.out.println("  Screen management not available for dumb terminal");
-        }
-    }
+		// IMPORTANT: Disable blocking I/O for responsive UI!
+		// Without this, processInput() eventually calls readInput() which blocks
+		// for up to ~100ms (JLine's internal timeout), making the UI sluggish.
+		// With non-blocking I/O, processInput() uses pollInput(1ms) and returns
+		// much faster, making the counter and UI more responsive.
+		gui.setBlockingIO(false);
 
-    private void testSignalHandling() {
-        System.out.println("Testing signal handling:");
-        System.out.println("  Signal handler installed: " + (terminal != null));
-        System.out.println("  SIGINT (Ctrl+C) will be handled gracefully");
-        System.out.println("  SIGTSTP (Ctrl+Z) suspension support available");
-    }
+		final BasicWindow window = new BasicWindow("OSGi Console UI Demo - Tab=Navigieren, Enter=Aktivieren");
 
-    private void performanceTests() throws IOException {
-        System.out.println("Running performance tests:");
-        
-        if (writer != null) {
-            // Test output performance
-            long startTime = System.nanoTime();
-            for (int i = 0; i < 1000; i++) {
-                writer.print("*");
-            }
-            writer.flush();
-            long endTime = System.nanoTime();
-            
-            double milliseconds = (endTime - startTime) / 1_000_000.0;
-            System.out.println("  1000 character output: " + String.format("%.2f ms", milliseconds));
-            
-            // Test color changes performance
-            startTime = System.nanoTime();
-            for (int i = 0; i < 100; i++) {
-                writer.print(Ansi.ansi().fg(Ansi.Color.values()[i % Ansi.Color.values().length]).a("*"));
-            }
-            writer.print(Ansi.ansi().reset());
-            writer.flush();
-            endTime = System.nanoTime();
-            
-            milliseconds = (endTime - startTime) / 1_000_000.0;
-            System.out.println("  100 color changes: " + String.format("%.2f ms", milliseconds));
-        }
-    }
+		Panel mainPanel = new Panel();
+		mainPanel.setLayoutManager(new LinearLayout(Direction.VERTICAL));
 
-    private void interactiveMode() throws IOException {
-        if (writer == null) return;
-        
-        writer.println("\n" + Ansi.ansi().bold().fg(Ansi.Color.CYAN));
-        writer.println("=== INTERACTIVE MODE ===");
-        writer.println("Press any key to see key codes (ESC to exit)");
-        writer.print(Ansi.ansi().reset());
-        writer.flush();
-        
-        terminal.enterRawMode();
-        
-        try {
-            int ch;
-            while (running && (ch = terminal.reader().read()) != -1) {
-                if (ch == 27) { // ESC key
-                    writer.println("\nExiting interactive mode...");
-                    break;
-                }
-                
-                // Display key information
-                writer.println(String.format("Key pressed: %d (0x%02X) '%c' at %s", 
-                    ch, ch, 
-                    (ch >= 32 && ch < 127) ? (char) ch : '?',
-                    LocalDateTime.now().format(DateTimeFormatter.ofPattern("HH:mm:ss.SSS"))
-                ));
-                writer.flush();
-                
-                // Handle special sequences
-                if (ch == 3) { // Ctrl+C
-                    writer.println("Ctrl+C detected - use ESC to exit");
-                    writer.flush();
-                }
-            }
-        } catch (Exception e) {
-            System.err.println("Interactive mode error: " + e.getMessage());
-        }
-        
-        writer.print(Ansi.ansi().reset());
-        writer.flush();
-    }
+		// Status label to show which action was triggered
+		final Label statusLabel = new Label("Status: Bereit. Navigieren Sie mit Tab, aktivieren Sie mit Enter.");
 
-    private void handleSignal(Terminal.Signal signal) {
-        System.out.println("\nSignal received: " + signal);
-        
-        switch (signal) {
-            case INT:
-                System.out.println("SIGINT (Ctrl+C) - Graceful shutdown initiated");
-                running = false;
-                break;
-            case TSTP:
-                System.out.println("SIGTSTP (Ctrl+Z) - Terminal suspension");
-                break;
-            case WINCH:
-                System.out.println("SIGWINCH - Terminal window size changed");
-                if (terminal != null) {
-                    System.out.println("New size: " + terminal.getSize());
-                }
-                break;
-            default:
-                System.out.println("Other signal: " + signal);
-        }
-    }
+		// Text input debug label - shows typed characters
+		final Label textInputLabel = new Label("");
 
-    @Deactivate
-    public void stop() {
-        System.out.println("=== JLine Terminal Demo Stopping ===");
-        running = false;
-        
-        try {
-            if (terminal != null) {
-                // Restore terminal to normal state
-                if (writer != null) {
-                    writer.print(Ansi.ansi().reset().cursor(1, 1));
-                    writer.flush();
-                }
-                terminal.close();
-            }
-            
-            // Cleanup Jansi
-            AnsiConsole.systemUninstall();
-            
-        } catch (Exception e) {
-            System.err.println("Error during cleanup: " + e.getMessage());
-        }
-        
-        System.out.println("Demo cleanup completed");
-    }
+		// Action counter
+		final int[] actionCounter = { 0 };
+
+		// Live counter that updates every second
+		final Label liveCounterLabel = new Label("Live Counter: 0 Sekunden");
+
+		// DON'T START TIMERS YET - GUI doesn't exist yet!
+
+		// Create an ActionListBox with various actions
+		ActionListBox actionListBox = new ActionListBox();
+		actionListBox.addItem("Aktion 1: Zähler erhöhen", () -> {
+			actionCounter[0]++;
+			statusLabel.setText("✓ Aktion 1 ausgelöst! Zähler: " + actionCounter[0]);
+		});
+		actionListBox.addItem("Aktion 2: Status zurücksetzen", () -> {
+			actionCounter[0] = 0;
+			statusLabel.setText("✓ Aktion 2 ausgelöst! Zähler zurückgesetzt.");
+		});
+		actionListBox.addItem("Aktion 3: Test-Nachricht", () -> {
+			statusLabel.setText("✓ Aktion 3 ausgelöst! Dies ist eine Test-Nachricht.");
+		});
+
+		// Create buttons in a horizontal panel
+		Panel buttonPanel = new Panel();
+		buttonPanel.setLayoutManager(new LinearLayout(Direction.HORIZONTAL));
+
+		buttonPanel.addComponent(new Button("Info", () -> {
+			statusLabel.setText("✓ Info-Button geklickt! Zähler: " + actionCounter[0]);
+		}));
+
+		buttonPanel.addComponent(new Button("Reset", () -> {
+			actionCounter[0] = 0;
+			statusLabel.setText("✓ Reset-Button geklickt! Zähler zurückgesetzt.");
+		}));
+
+		buttonPanel.addComponent(new Button("Test", () -> {
+			actionCounter[0] += 10;
+			statusLabel.setText("✓ Test-Button geklickt! +10 zum Zähler: " + actionCounter[0]);
+		}));
+
+		// Position label to show cursor/click position
+		final Label positionLabel = new Label("Position: Keine Eingabe erkannt");
+
+		// Arrow key test label
+		final Label arrowKeyLabel = new Label("Pfeiltasten: Keine gedrückt");
+
+		// Terminal resize label
+		final Label terminalSizeLabel = new Label(String.format("Terminal-Größe: %dx%d",
+			screen.getTerminalSize().getColumns(), screen.getTerminalSize().getRows()));
+
+		// Mouse event labels
+		final Label mousePositionLabel = new Label("Maus-Position: Keine Bewegung erkannt");
+		final Label mouseButtonLabel = new Label("Maus-Button: Kein Klick erkannt");
+		final Label mouseActionLabel = new Label("Maus-Aktion: Keine Aktion erkannt");
+		final Label mouseEventTypeLabel = new Label("Event-Typ: -");
+
+		// Add all components to main panel
+		mainPanel.addComponent(terminalSizeLabel.withBorder(Borders.singleLine("Terminal-Größe")));
+		mainPanel.addComponent(new EmptySpace(com.googlecode.lanterna.TerminalSize.ONE));
+		mainPanel.addComponent(liveCounterLabel.withBorder(Borders.singleLine("Live Timer")));
+		mainPanel.addComponent(new EmptySpace(com.googlecode.lanterna.TerminalSize.ONE));
+		mainPanel.addComponent(arrowKeyLabel.withBorder(Borders.singleLine("Pfeiltasten Test")));
+		mainPanel.addComponent(new EmptySpace(com.googlecode.lanterna.TerminalSize.ONE));
+		mainPanel.addComponent(mousePositionLabel.withBorder(Borders.singleLine("Maus-Position")));
+		mainPanel.addComponent(new EmptySpace(com.googlecode.lanterna.TerminalSize.ONE));
+		mainPanel.addComponent(mouseButtonLabel.withBorder(Borders.singleLine("Maus-Button")));
+		mainPanel.addComponent(new EmptySpace(com.googlecode.lanterna.TerminalSize.ONE));
+		mainPanel.addComponent(mouseActionLabel.withBorder(Borders.singleLine("Maus-Aktion")));
+		mainPanel.addComponent(new EmptySpace(com.googlecode.lanterna.TerminalSize.ONE));
+		mainPanel.addComponent(mouseEventTypeLabel.withBorder(Borders.singleLine("Maus-Event-Typ")));
+		mainPanel.addComponent(new EmptySpace(com.googlecode.lanterna.TerminalSize.ONE));
+		mainPanel.addComponent(positionLabel.withBorder(Borders.singleLine("Input Debug")));
+		mainPanel.addComponent(new EmptySpace(com.googlecode.lanterna.TerminalSize.ONE));
+		mainPanel.addComponent(textInputLabel.withBorder(Borders.singleLine("Getippte Zeichen")));
+		mainPanel.addComponent(new EmptySpace(com.googlecode.lanterna.TerminalSize.ONE));
+		mainPanel.addComponent(statusLabel.withBorder(Borders.singleLine("Status")));
+		mainPanel.addComponent(new EmptySpace(com.googlecode.lanterna.TerminalSize.ONE));
+		mainPanel.addComponent(actionListBox.withBorder(Borders.singleLine("Aktionen (Enter drücken)")));
+		mainPanel.addComponent(new EmptySpace(com.googlecode.lanterna.TerminalSize.ONE));
+		mainPanel.addComponent(buttonPanel.withBorder(Borders.singleLine("Buttons")));
+		mainPanel.addComponent(new EmptySpace(com.googlecode.lanterna.TerminalSize.ONE));
+		mainPanel.addComponent(new Separator(Direction.HORIZONTAL));
+		mainPanel.addComponent(new Button("Beenden (Exit)", window::close));
+
+		window.setComponent(mainPanel);
+
+		// Add resize listener to track terminal size changes
+		terminal.addResizeListener((terminal1, newSize) -> {
+			terminalSizeLabel.setText(String.format("Terminal-Größe: %dx%d (neu!)",
+				newSize.getColumns(), newSize.getRows()));
+			System.err.println("Terminal resized to: " + newSize);
+		});
+
+		System.err.println("Demo: About to add window and wait...");
+
+		// Add window and wait until it's closed
+		gui.addListener(new Listener() {
+
+			@Override
+			public boolean onUnhandledKeyStroke(TextGUI textGUI, KeyStroke keyStroke) {
+				// Handle mouse events - but filter out simple MOVE events to reduce noise
+				if (keyStroke instanceof com.googlecode.lanterna.input.MouseAction mouseAction) {
+					var actionType = mouseAction.getActionType();
+
+					// Only process significant mouse events (not simple moves)
+					if (actionType != com.googlecode.lanterna.input.MouseActionType.MOVE) {
+						// Update mouse position
+						var pos = mouseAction.getPosition();
+						mousePositionLabel.setText(String.format("Maus-Position: X=%d, Y=%d",
+							pos.getColumn(), pos.getRow()));
+
+						// Update mouse button
+						int button = mouseAction.getButton();
+						String buttonName = switch (button) {
+							case 1 -> "Links";
+							case 2 -> "Mitte";
+							case 3 -> "Rechts";
+							case 4 -> "Scroll-Up";
+							case 5 -> "Scroll-Down";
+							default -> "Button " + button;
+						};
+						mouseButtonLabel.setText("Maus-Button: " + buttonName);
+
+						// Update action type
+						String actionName = switch (actionType) {
+							case CLICK_DOWN -> "CLICK_DOWN (Taste gedrückt)";
+							case CLICK_RELEASE -> "CLICK_RELEASE (Taste losgelassen)";
+							case DRAG -> "DRAG (Ziehen mit Taste)";
+							case MOVE -> "MOVE (Bewegung ohne Taste)";
+							case SCROLL_UP -> "SCROLL_UP (Rauf scrollen)";
+							case SCROLL_DOWN -> "SCROLL_DOWN (Runter scrollen)";
+							default -> actionType.toString();
+						};
+						mouseActionLabel.setText("Maus-Aktion: " + actionName);
+
+						// Full event description
+						mouseEventTypeLabel.setText(String.format("Event-Typ: %s @ (%d,%d) Button=%d",
+							actionType, pos.getColumn(), pos.getRow(), button));
+					}
+
+					return true; // Event handled
+				}
+
+				// Handle regular key presses - display typed characters
+				if (keyStroke != null && keyStroke.getKeyType() == KeyType.Character) {
+					Character ch = keyStroke.getCharacter();
+					if (ch != null) {
+						textInputLabel.setText("Getipptes Zeichen: '" + ch + "' (Code: " + (int)ch + ")");
+					}
+					return false; // Let GUI handle it normally
+				}
+
+				// Check if there's an active window before accessing it
+				com.googlecode.lanterna.gui2.Window activeWindow = gui.getActiveWindow();
+				if (activeWindow != null) {
+					TerminalPosition pos = activeWindow.getPosition();
+					positionLabel.setText("Position: " + pos.toString());
+				}
+
+				// Handle Ctrl+C to exit cleanly
+				if (keyStroke != null && keyStroke.isCtrlDown() &&
+					keyStroke.getCharacter() != null && keyStroke.getCharacter() == 'c') {
+					System.err.println("Ctrl+C detected - closing window...");
+					window.close();
+					return true;
+				}
+
+				// Test arrow keys - these should be recognized now!
+				if (keyStroke != null && keyStroke.getKeyType() != null) {
+					switch (keyStroke.getKeyType()) {
+					case ArrowUp:
+						arrowKeyLabel.setText("Pfeiltasten: ↑ Oben gedrückt!");
+						return true;
+					case ArrowDown:
+						arrowKeyLabel.setText("Pfeiltasten: ↓ Unten gedrückt!");
+						return true;
+					case ArrowLeft:
+						arrowKeyLabel.setText("Pfeiltasten: ← Links gedrückt!");
+						return true;
+					case ArrowRight:
+						arrowKeyLabel.setText("Pfeiltasten: → Rechts gedrückt!");
+						return true;
+					default:
+						break;
+					}
+				}
+
+				return false;
+			}
+		});
+
+		System.err.println("Demo: Adding window...");
+		gui.addWindow(window);
+
+		try {
+			while (window.isVisible()) {
+
+				// Process input and update screen
+				if (gui.isPendingUpdate()) {
+					gui.updateScreen();
+				}
+
+				// Process input - with non-blocking I/O this returns immediately
+				gui.processInput();
+
+				// Small sleep to avoid busy-waiting
+				try {
+					Thread.sleep(50);
+				} catch (InterruptedException e) {
+					System.err.println("Demo interrupted - cleaning up...");
+					break;
+				}
+			}
+		} finally {
+			// Always clean up, even if interrupted
+			System.err.println("Demo: Cleaning up terminal...");
+
+			// Exit private mode first to disable mouse tracking
+			try {
+				terminal.exitPrivateMode();
+				System.err.println("  Private mode exited");
+			} catch (Exception e) {
+				System.err.println("  Error exiting private mode: " + e.getMessage());
+			}
+
+			try {
+				screen.clear();
+				screen.refresh();
+				screen.stopScreen();
+			} catch (Exception e) {
+				System.err.println("Error during screen cleanup: " + e.getMessage());
+			}
+
+			try {
+				terminal.close();
+			} catch (Exception e) {
+				System.err.println("Error during terminal close: " + e.getMessage());
+			}
+			System.err.println("Demo: Cleanup complete.");
+		}
+
+	}
+
+	@Deactivate
+	public void stop() {
+
+		// Cleanup Jansi
+		AnsiConsole.systemUninstall();
+
+	}
 }

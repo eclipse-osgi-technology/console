@@ -18,6 +18,8 @@ import org.apache.felix.service.command.CommandSession;
 import org.osgi.annotation.bundle.Header;
 import org.osgi.framework.*;
 import org.osgi.util.tracker.ServiceTracker;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.FileDescriptor;
 import java.io.FileInputStream;
@@ -131,6 +133,8 @@ public final class Activator implements BundleActivator {
      * Internal job that sets up a Gogo session and runs "gosh --login".
      */
     private static final class StartShellJob implements Runnable {
+        private static final Logger logger = LoggerFactory.getLogger(StartShellJob.class);
+
         private final BundleContext context;
         private final CommandProcessor processor;
         private volatile CommandSession session;
@@ -158,7 +162,7 @@ public final class Activator implements BundleActivator {
                 Thread.currentThread().interrupt();
 
             } catch (Exception e) {
-                e.printStackTrace();
+                logger.error("Error executing gosh shell", e);
             } finally {
                 terminate();
             }
