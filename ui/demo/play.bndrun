@@ -1,21 +1,29 @@
 
+#-runtrace: true
+
 -runrequires: \
 	bnd.identity;id='org.eclipse.osgi-technology.console.ui.${project.artifactId}',\
-	bnd.identity;id='org.jline.terminal-jni',\
-	bnd.identity;id='org.apache.aries.spifly.dynamic.framework.extension'
+	bnd.identity;id='org.apache.aries.spifly.dynamic.framework.extension',\
+	bnd.identity;id='org.jline.terminal-jansi',\
+	bnd.identity;id='org.jline.terminal',\
+	bnd.identity;id='org.eclipse.osgi-technology.console.ui.jline'
 
 -runfw: org.apache.felix.framework
 -runbundles: \
-	org.apache.felix.scr;version='[2.2.2,2.2.3)',\
-	org.osgi.service.component;version='[1.5.1,1.5.2)',\
 	org.eclipse.osgi-technology.console.ui.demo;version='[0.0.1,0.0.2)',\
 	org.eclipse.osgi-technology.console.ui.lanterna;version='[0.0.1,0.0.2)',\
-	org.jline.jansi-core;version='[3.30.4,3.30.5)',\
-	org.jline.terminal;version='[3.30.4,3.30.5)',\
-	org.jline.native;version='[3.30.5,3.30.6)',\
-	org.jline.terminal-jni;version='[3.30.5,3.30.6)',\
 	org.apache.aries.spifly.dynamic.framework.extension;version='[1.3.7,1.3.8)',\
+	org.jline.native;version='[3.30.6,3.30.7)',\
+	org.fusesource.jansi;version='[2.4.2,2.4.3)',\
+	org.jline.jansi-core;version='[3.30.6,3.30.7)',\
+	org.jline.terminal;version='[3.30.6,3.30.7)',\
+	org.jline.terminal-jansi;version='[3.30.6,3.30.7)',\
+	org.apache.felix.scr;version='[2.2.2,2.2.3)',\
+	org.osgi.service.component;version='[1.5.1,1.5.2)',\
 	org.osgi.util.function;version='[1.0.0,1.0.1)',\
-	org.osgi.util.promise;version='[1.0.0,1.0.1)'
--runee: JavaSE-17
+	org.osgi.util.promise;version='[1.0.0,1.0.1)',\
+	org.eclipse.osgi-technology.console.ui.jline;version='[0.0.1,0.0.2)',\
+	slf4j.api;version='[2.0.11,2.0.12)',\
+	slf4j.simple;version='[2.0.11,2.0.12)'
+-runee: JavaSE-21
 -runvm: -Dorg.jline.debug=true
